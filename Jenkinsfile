@@ -60,7 +60,9 @@ node {
 		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
 		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
 		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
-		
+		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
+		echo "pom_GroupID: ${pom_GroupID}"
+			
 		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
 		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
