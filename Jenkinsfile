@@ -398,7 +398,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'Please select workerSize for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '1\n1\n3\n4\n5\n6\n7\n8', 
+					$class: 'ChoiceParameterDefinition', choices: '1\n2\n3\n4\n5\n6\n7\n8', 
 					name: 'SELECTED_WORKERS',
 					description: 'Please select No.of workers'
 				]])
@@ -406,7 +406,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'Please select mule runtime for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '4.1.3', 
+					$class: 'ChoiceParameterDefinition', choices: '4.1.3\n4.1.4\n4.1.5', 
 					name: 'SELECTED_MULE_RUNTIME',
 					description: 'Please select Mule Runtime'
 				]])
@@ -447,7 +447,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'Please select workerSize for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '1\n1\n3\n4\n5\n6\n7\n8', 
+					$class: 'ChoiceParameterDefinition', choices: '1\n2\n3\n4\n5\n6\n7\n8', 
 					name: 'SELECTED_WORKERS',
 					description: 'Please select No.of workers'
 				]])
@@ -455,7 +455,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'Please select mule runtime for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '4.1.3', 
+					$class: 'ChoiceParameterDefinition', choices: '4.1.3\n4.1.4\n4.1.5', 
 					name: 'SELECTED_MULE_RUNTIME',
 					description: 'Please select Mule Runtime'
 				]])
@@ -463,6 +463,15 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 		vCoreInput = "${workerSizeInput}"
 		workerInput = "${workerNumberInput}"
 		runTimeVersion = "${RuntimeInput}"
+
+		echo "###### Displaying all the parameters before deploying to cloud hub #####"
+		echo "appExists is : ${appExists}"
+		echo "PropertiesFileInput is : ${PropertiesFileInput}"		
+		echo "vCoreInput is : ${vCoreInput}"
+		echo "workerInput is : ${workerInput}"
+		echo "runTimeVersion is : ${runTimeVersion}"
+		echo "AppName is : ${udfp_AppName}"
+		echo "Download path is : ${udfp_DownloadedFilePath}"
 		
 		withCredentials([usernamePassword(
 			credentialsId: "${AnypointCredentialID}",
