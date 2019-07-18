@@ -1,13 +1,21 @@
 pipeline {
   agent any
   
+  /*parameters {
+	string(
+		name: 'CICD Pipeline',
+		defaultValue:'WB',
+		description: 'Oasis CICD Pipeline')
+    }*/
 	stages {
-		stage('Pipeline Start') {		
-			steps {
-			   echo 'Pipeline Started'
-			}
-		}
-	}
+    stage('Pipeline Start') {
+		
+      steps {
+       echo 'Pipeline Started'
+	  }
+    }
+}
+}
 node {
 	properties([
      parameters([
@@ -42,7 +50,13 @@ node {
 			
 		stage 'SonarQube'
 			UDF_ExecuteSonarQubeRules()
-					
+		
+		/*def EnvironmentNameUserInput = input(
+			 id: 'EnvironmentNameUserInput', message: 'Enter Environment specific Profile name for CloudHub Deployment:?', 
+			 parameters: [
+			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Environment Name', name: 'EnvironmentName']
+			])*/
+			
 		def DomainNameUserInput = input(
 			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 			 parameters: [
@@ -55,12 +69,12 @@ node {
 		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
 		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
 		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
-		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")	
+		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
+		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
+		
 		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
 		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
-		
-		echo "nexus_BaseURL is : ${env.LOCAL_NEXUS_BASEURL}"
 	
 		stage 'ArtifactUploadToNexus'
 			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
@@ -92,8 +106,12 @@ node {
 		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
 		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
 		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
+		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
+		
 		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
+		//def downloadFilePath="${env.JENKINS_HOME}/CloudHub/Downloads/"+UDF_GetGitRepoName()+"/${pom_ArtifactId}.zip"
+		//def downloadFilePath="${env.WORKSPACE}/target/${pom_ArtifactId}-${pom_Version}.zip"
 	
 		stage 'ArtifactUploadToNexus'
 			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
@@ -116,6 +134,7 @@ node {
 			def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
 			def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
 			def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
+			//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
 			def downloadDir = ""
 			environment {
 			NEXUS_CREDENTIALS = credentials('bcbacb84-8abf-482f-be12-4bc25148b805')
@@ -147,9 +166,28 @@ node {
 			 parameters: [
 			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
 			])
-						
-			def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"			
+			
+			/*def EnvironmentNameUserInput = input(
+			 id: 'EnvironmentNameUserInput', message: 'Enter Environment specific Profile name for CloudHub Deployment:?', 
+			 parameters: [
+			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Environment Name', name: 'EnvironmentName']
+			])*/
+			
+			def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+			
+			//def downloadDir = "${env.JENKINS_HOME}/CloudHub/Downloads/"+UDF_GetGitRepoName()		
+			
+			/*withCredentials([usernamePassword(
+			credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
+			passwordVariable: 'nexuspassword',
+			usernameVariable: 'nexususername')])
+			{
+			def nexus_SearchURL_File = "curl -v -u ${nexususername}:${nexuspassword} ${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}&version=${selectedVersion}"
+			def downloadDir = UDF_GetNexusArtifacts_DownloadURL(nexus_SearchURL_File)
+			}*/
+			//def downloadFilePath="\${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
 			def downloadFilePath="C:\\Program Files\\Jenkins\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
+			//def downloadFilePath="${env.WORKSPACE}/target/${pom_ArtifactId}-${pom_Version}.zip"
 
 		stage 'DeployToCloudHub'
 				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,downloadDir,DomainNameUserInput)
