@@ -1,13 +1,7 @@
 pipeline {
   agent any
   
-  /*parameters {
-	string(
-		name: 'CICD Pipeline',
-		defaultValue:'WB',
-		description: 'Oasis CICD Pipeline')
-    }*/
-	stages {
+stages {
     stage('Pipeline Start') {
 		
       steps {
@@ -48,15 +42,9 @@ node {
 		stage 'SourceCodeBuild'	
 			UDF_BuildSourceCode()
 			
-		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
-		
-		/*def EnvironmentNameUserInput = input(
-			 id: 'EnvironmentNameUserInput', message: 'Enter Environment specific Profile name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Environment Name', name: 'EnvironmentName']
-			])*/
-			
+		//stage 'SonarQube'
+		//	UDF_ExecuteSonarQubeRules()
+				
 		def DomainNameUserInput = input(
 			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 			 parameters: [
@@ -71,6 +59,7 @@ node {
 		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
 		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
 		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
+		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
 		
 		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
