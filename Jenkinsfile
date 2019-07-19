@@ -2,11 +2,10 @@ pipeline {
   agent any
   
 stages {
-    stage('Pipeline Start') {
-		
-      steps {
-       echo 'Pipeline Started'
-	  }
+    stage('Pipeline Start') {		
+		steps {
+		   echo 'Pipeline Started with Smerret2'
+		}
     }
 }
 }
@@ -15,7 +14,7 @@ node {
      parameters([
        choiceParam(
          choices: 'DEV\nSIT\nUAT\nPROD',
-            description: 'Please selet the Build ENVIRONMENTS',
+            description: 'Please select the Build ENVIRONMENTS',
             name: 'ENVIRONMENTS'
        ),
        choiceParam(
@@ -43,7 +42,7 @@ node {
 			UDF_BuildSourceCode()
 			
 		//stage 'SonarQube'
-		//	UDF_ExecuteSonarQubeRules()
+			//UDF_ExecuteSonarQubeRules()
 				
 		def DomainNameUserInput = input(
 			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
@@ -63,7 +62,7 @@ node {
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
 		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
 		
-		echo "### NEXUS REPO DETAILS ###"
+		echo "###### NEXUS REPO DETAILS ######"
 		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
 		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
 		echo "pom_GroupID: ${pom_GroupID}"
@@ -82,7 +81,7 @@ node {
 		stage 'DeployToCloudHub'
 			UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
 		
-		stage 'Notification'
+		stage ' '
 			SendEmail("","","success")
 			
 		}catch(error)
@@ -295,8 +294,8 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 	Download the selected Application Zip package from Nexus Repository
 	*/
 	 
-	echo 'Entered UDF_DeployToCloudHub stage'
- 
+	echo "###### Entered to Application Deployment stage ######"
+	echo "#### Parameters we received ##udfp_DownloadedFilePath: ${udfp_DownloadedFilePath} ##udfp_PropertiesFilePath: ${udfp_PropertiesFilePath} ##udfp_NexusPackageURL: ${udfp_NexusPackageURL} ##udfp_AppName: ${udfp_AppName}"
 	
 	def AnypointCredentialID = input(
 			 id: 'DomainNameUserInput', message: 'Please provide Cloudhub Credential ID:?', 
@@ -328,64 +327,42 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 			])
 		
 	environment {
-        ANYPOINT_CREDENTIALS = credentials("${AnypointCredentialID}")
-		}
+		ANYPOINT_CREDENTIALS = credentials("${AnypointCredentialID}")
+	}
 	
-	echo "Nexus Download URL - ${udfp_NexusPackageURL}"
-	
-	echo "Download file path - ${udfp_DownloadedFilePath}"
-	
+	echo "Nexus Download URL - ${udfp_NexusPackageURL} ### Download file path - ${udfp_DownloadedFilePath}"
 	
 	if(udfp_NexusPackageURL != "")
 	{
-		withCredentials([usernamePassword(
-			credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
-			passwordVariable: 'nexuspassword',
-			usernameVariable: 'nexususername')])
-			{
-				
-			 // "C:\Program Files (x86)\Jenkins\run.bat" "${udfp_DownloadedFilePath}"
-				
-				//def downloadFolder1 = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()
-				//def tempFolderCreate = "cmd /c C:\cmd_mkdir.bat  "+\"${downloadFolder1}\"
-				//echo "------${tempFolderCreate}----------"
-				//tempFolderCreate.execute()
-				//def resp = " bat C:\\cmd_mkdir.bat  \"${downloadFolder1}\""
-				//resp.execute()
-				
-			 
-				
-		sh "wget --user ${nexususername} --password ${nexuspassword} ${udfp_NexusPackageURL} -O \"${udfp_DownloadedFilePath}\""	
-		
-	 
-			}
+		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')]) {			
+			sh "wget --user ${nexususername} --password ${nexuspassword} ${udfp_NexusPackageURL} -O \"${udfp_DownloadedFilePath}\""	
+		}
 	}
 	
 	def appExists = false
 	try{		
 		echo 'Auto-deploy to CloudHub started'
-		withCredentials([usernamePassword(
-			credentialsId: "${AnypointCredentialID}",
-			passwordVariable: 'password1',
-			usernameVariable: 'username1')])
-			{
-		sh """			
-			export ANYPOINT_USERNAME=${username1}
-			export ANYPOINT_PASSWORD=${password1}
-			export ANYPOINT_ORG="${AnypointOrganization}"
-			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application describe ${udfp_AppName}
-		"""
-			}
+		echo "AnypointCredentialID: ${AnypointCredentialID}"
+		echo "ANYPOINT_USERNAME : ${username1}"
+		echo "ANYPOINT_PASSWORD: ${password1}"
+		withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]) {
+			sh """			
+				export ANYPOINT_USERNAME=${username1}
+				export ANYPOINT_PASSWORD=${password1}
+				export ANYPOINT_ORG="${AnypointOrganization}"
+				export ANYPOINT_ENV="${AnypointEnvironment}"
+				anypoint-cli runtime-mgr cloudhub-application describe ${udfp_AppName}
+			"""
+		}
 		appExists = true
-	}catch(err)
-	{
-		//throw(error)
+	} catch(err) {
+		//throw(err)
 		//SendEmail("","","FAILED")
 	}
 	
-	if(appExists == false && PropertiesFileInput == 'YES')
-	{
+	if(appExists == false && PropertiesFileInput == 'YES') {
+		echo "App Exists is false and Property file input is YES"
+		
 		def workerSizeInput = input(
                 id: 'workerSizeInput', message: 'Please select vCores for Deployment:?', 
                 parameters: [
@@ -415,8 +392,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 		workerInput = "${workerNumberInput}"
 		runTimeVersion = "${RuntimeInput}"
 				
-		
-		//Deploy New Application
+		echo "###### Deploy New Application ######"
 		withCredentials([usernamePassword(
 			credentialsId: "${AnypointCredentialID}",
 			passwordVariable: 'password1',
@@ -430,11 +406,13 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 			anypoint-cli runtime-mgr cloudhub-application deploy ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} --propertiesFile ${udfp_PropertiesFilePath}
 		"""
 			}
-		echo 'new app and props'
+		echo "###### New Application Deployment is done ######"
+		
 	}
 	else if(appExists == false && PropertiesFileInput == 'NO')
 	{
 		//Modify Existing Application
+		echo "App Exists is false and Property file input is NO, Hence Modify Existing Application"
 		def workerSizeInput = input(
                 id: 'workerSizeInput', message: 'Please select vCores for Deployment:?', 
                 parameters: [
@@ -487,10 +465,11 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 		"""
 			}
 		echo 'new app and no props'
-	}
-	else if (appExists == true && PropertiesFileInput == 'YES')
-	{
+	} else if (appExists == true && PropertiesFileInput == 'YES') {
+	
 		//Modify Existing Application
+		echo "App Exists is true and Property file input is YES, Hence Modify Existing Application"
+
 		def MuleRunTImeProperties = input(
                 id: 'MuleRunTImeProperties', message: 'appExists == true && PropertiesFileInput ==  NO:Do you want to change Mule Runtime like vCore,Workers, MuleRuntimeVersion:?', 
                 parameters: [
@@ -513,7 +492,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'appExists == true && PropertiesFileInput ==  NO:Please select workerSize for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '1\n1\n3\n4\n5\n6\n7\n8', 
+					$class: 'ChoiceParameterDefinition', choices: '1\n2\n3\n4\n5\n6\n7\n8', 
 					name: 'SELECTED_WORKERS',
 					description: 'appExists == true && PropertiesFileInput ==  NO:Please select No.of workers'
 				]])
@@ -521,7 +500,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
                 id: 'workerInput', message: 'appExists == true && PropertiesFileInput ==  NO:Please select mule runtime for Deployment:?', 
                 parameters: [
 				[
-					$class: 'ChoiceParameterDefinition', choices: '4.1.3', 
+					$class: 'ChoiceParameterDefinition', choices: '4.1.3\n4.1.4\n4.1.5\n4.2.0', 
 					name: 'SELECTED_MULE_RUNTIME',
 					description: 'appExists == true && PropertiesFileInput ==  NO:Please select Mule Runtime'
 				]])
@@ -530,21 +509,28 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 		workerInput = "${workerNumberInput}"
 		runTimeVersion = "${RuntimeInput}"
 		
-		withCredentials([usernamePassword(
-			credentialsId: "${AnypointCredentialID}",
-			passwordVariable: 'password1',
-			usernameVariable: 'username1')])
-			{
+		echo "udfp_AppName is: ${udfp_AppName}"
+		echo "udfp_DownloadedFilePath is: ${udfp_DownloadedFilePath}"
+		echo "vCoreInput: ${vCoreInput}"
+		echo "workerInput: ${workerInput}"
+		echo "runTimeVersion: ${runTimeVersion}"
+		echo "udfp_PropertiesFilePath: ${udfp_PropertiesFilePath}"
+		
+		withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]) {
 			sh """			
 			export ANYPOINT_USERNAME=${username1}
 			export ANYPOINT_PASSWORD=${password1}
 			export ANYPOINT_ORG="${AnypointOrganization}"
 			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} --propertiesFile ${udfp_PropertiesFilePath}
+			//anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} --propertiesFile ${udfp_PropertiesFilePath}
+			mvn deploy -DmuleDeploy -Dmule.env=dev -Dencrypt.key=MULESOFT_DEV -Danypoint.platform.gatekeeper=disabled
 		"""
-			}
+		}
 		echo 'existing app and props'
 		}else{
+			echo "Application exists but No Property file"
+			echo "AnypointCredentialID: ${AnypointCredentialID}"
+			
 			withCredentials([usernamePassword(
 			credentialsId: "${AnypointCredentialID}",
 			passwordVariable: 'password1',
@@ -558,13 +544,12 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 			anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\"  --propertiesFile ${udfp_PropertiesFilePath}
 		"""
 			}
-			
 		}
-	}
-	else if (appExists == true && PropertiesFileInput == 'NO')
-	{
+	} else if (appExists == true && PropertiesFileInput == 'NO') {
+	
 		//Modify Existing Application
-		
+		echo "App Exists is true and Property file input is NO, Hence Modify Existing Application"
+	
 		def MuleRunTImeProperties = input(
                 id: 'MuleRunTImeProperties', message: 'Do you want to change Mule Runtime like vCore,Workers, MuleRuntimeVersion:?', 
                 parameters: [
