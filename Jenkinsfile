@@ -461,7 +461,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 			export ANYPOINT_PASSWORD=${password1}
 			export ANYPOINT_ORG="${AnypointOrganization}"
 			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application deploy ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
+			anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
 		"""
 			}
 		echo 'new app and no props'
