@@ -4,7 +4,7 @@ pipeline {
 stages {
     stage('Pipeline Start') {		
 		steps {
-		   echo 'Pipeline Started with Smerret2'
+		   echo 'Pipeline Started with DevDevOps'
 		}
     }
 }
