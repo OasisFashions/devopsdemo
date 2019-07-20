@@ -4,7 +4,7 @@ pipeline {
 stages {
     stage('Pipeline Start') {		
 		steps {
-		   echo 'Pipeline Started with DevOps'
+		   echo 'Pipeline Started with Smerret2'
 		}
     }
 }
@@ -26,7 +26,7 @@ node {
        choiceParam(
          choices: 'YES\nNO',
             description: 'Is application existed on cloud?/Are you re-deploying application on Cloud?',
-            name: 'AppExisted'
+            name: 'APP_EXISTS'
        ),
 	   string(
 	   name: 'BuildParameters', 
@@ -55,7 +55,7 @@ node {
 				UDF_ArtifactUploadToNexus()
 				
 			stage 'DeployToCloudHub'
-				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"")
+				UDF_DeployToCloudHub()
 			
 			stage 'Notification'
 				SendEmail("","","success")			
@@ -192,9 +192,7 @@ def UDF_ArtifactUploadToNexus()
 		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
 		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
 		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
-		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
-		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
 		
 		echo "###### NEXUS REPO DETAILS ######"
 		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
@@ -203,9 +201,7 @@ def UDF_ArtifactUploadToNexus()
 		echo "pom_ArtifactId is : ${pom_ArtifactId}"
 		echo "pom_Version is : ${pom_Version}"
 		echo "pom_Packaging is : ${pom_Packaging}"
-		echo "propertiesFilePath is : ${propertiesFilePath}"
 		echo "downloadDir is : ${downloadDir}"
-		echo "downloadFilePath is : ${downloadFilePath}"
 	
 	String nexusRepoName = "${nexus_RepoName}/"
 	String targetZipName = "target/${pom_ArtifactId}-${pom_Version}-mule-application.jar"
@@ -243,22 +239,23 @@ def UDF_ArtifactUploadToNexus()
 DEPLOY STAGE
 This function provides functionality to deploy the application package(zip file) to CloudHub Runtime
 */
-def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_NexusPackageURL)
+def UDF_DeployToCloudHub()
 {
-    /*
-	Download the selected Application Zip package from Nexus Repository
-	*/
-	 
+
 	echo "###### Entered to Application Deployment stage ######"
-	echo "#### Parameters we received ##udfp_DownloadedFilePath: ${udfp_DownloadedFilePath} ##udfp_PropertiesFilePath: ${udfp_PropertiesFilePath} ##udfp_NexusPackageURL: ${udfp_NexusPackageURL} ##udfp_AppName: ${udfp_AppName}"
-	
+
 	def DomainNameUserInput = input(
 		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 		 parameters: [
 		 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
 	])
-	
+
+	def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+	def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
+	echo "propertiesFilePath is : ${propertiesFilePath}"
+	echo "downloadFilePath is : ${downloadFilePath}"	
 	echo "DomainName which you have entered is: ${DomainNameUserInput}"
+	echo "APP_EXISTS is : ${APP_EXISTS}"
 
 	def AnypointCredentialID = input(
 			 id: 'DomainNameUserInput', message: 'Please provide Cloudhub Credential ID:?', 
