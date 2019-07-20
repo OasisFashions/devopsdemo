@@ -14,7 +14,7 @@ node {
 	def nexus_BaseURL = ""		
 	def nexus_RepoName = ""		
 	def pom_GroupID = ""
-	pom_ArtifactId = ""
+	def pom_ArtifactId = ""
 	def pom_Version = ""
 	def pom_Packaging = ""
 	def downloadDir = ""
@@ -87,8 +87,7 @@ node {
 	} else if(params.BUILD_MECHANISM == 'RELEASE') {
 		try{
 		
-		stage 'GetArtifactListFromNexus'					
-		def downloadDir = ""
+		stage 'GetArtifactListFromNexus'
 
 		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')])  {
 		def nexus_SearchURL = "curl -v -u ${nexususername}:${nexuspassword} \"${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}\""
@@ -266,7 +265,7 @@ def UDF_DeployToCloudHub()
 
 	def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 	def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
-	
+
 	echo "propertiesFilePath is : ${propertiesFilePath}"
 	echo "downloadFilePath is : ${downloadFilePath}"	
 	echo "DomainName which you have entered is: ${DomainNameUserInput}"
@@ -748,7 +747,8 @@ This function converts the given json string to HashMap and returns it back
 
 import groovy.json.JsonSlurperClassic
 @NonCPS
-def parseJsonToMap(String json) {
+def parseJsonToMap(String json) 
+{
     final slurper = new JsonSlurperClassic()
     return new HashMap<>(slurper.parseText(json))
 }
