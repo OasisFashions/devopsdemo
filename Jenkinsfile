@@ -10,46 +10,6 @@ stages {
 }
 }
 node {
-	properties([
-     parameters([
-       choiceParam(
-         choices: 'DEV\nSIT\nUAT\nPROD',
-            description: 'Please select the Build ENVIRONMENTS',
-            name: 'ENVIRONMENTS'
-       ),
-       choiceParam(
-         choices: 'BUILD\nBUILD-AND-ARTEFACT-UPLOAD\nBUILD-AND-RELEASE\nRELEASE',
-            description: 'Please select the Build Mechanism',
-            name: 'BUILD_MECHANISM'
-       ),
-	   string(
-	   name: 'BuildParameters', 
-	   defaultValue: 'mvn -U install -DskipTests=true', 
-	   description: 'Please provide Additional Build Parameter to execute')
-     ])
-   ])	
-   
-	if(params.BUILD_MECHANISM == 'BUILD'){
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
-			
-		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
-	}	
-	else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE'){
-		try{
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
-			
-		//stage 'SonarQube'
-			//UDF_ExecuteSonarQubeRules()
-				
-		def DomainNameUserInput = input(
-			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
-			])
-		
 		def nexus_Protocol = "http"
 		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
 		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
@@ -62,7 +22,7 @@ node {
 		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
 		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
 		
-		echo "###### NEXUS REPO DETAILS ######"
+				echo "###### NEXUS REPO DETAILS ######"
 		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
 		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
 		echo "pom_GroupID: ${pom_GroupID}"
@@ -73,7 +33,51 @@ node {
 		echo "downloadDir is : ${downloadDir}"
 		echo "downloadFilePath is : ${downloadFilePath}"
 		echo "DomainName which you have entered is: ${DomainNameUserInput}"
-		
+
+	properties([
+     parameters([
+       choiceParam(
+         choices: 'DEV\nSIT\nUAT\nPROD',
+            description: 'Please select the Build ENVIRONMENTS',
+            name: 'ENVIRONMENTS'
+       ),
+       choiceParam(
+         choices: 'BUILD\nBUILD-AND-ARTEFACT-UPLOAD\nBUILD-AND-RELEASE\nRELEASE',
+            description: 'Please select the Build Mechanism',
+            name: 'BUILD_MECHANISM'
+       ),
+       choiceParam(
+         choices: 'YES\nNO',
+            description: 'Is application existed on cloud?/Are you re-deploying application on Cloud?',
+            name: 'AppExisted'
+       ),
+	   string(
+	   name: 'BuildParameters', 
+	   defaultValue: 'mvn -U install -DskipTests=true', 
+	   description: 'Please provide Additional Build Parameter to execute')
+     ])
+   ])	
+   
+	if(params.BUILD_MECHANISM == 'BUILD') {
+		stage 'SourceCodeBuild'	
+			UDF_BuildSourceCode()
+			
+		stage 'SonarQube'
+			UDF_ExecuteSonarQubeRules()
+			
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE'){
+		try{
+		stage 'SourceCodeBuild'	
+			UDF_BuildSourceCode()
+			
+		stage 'SonarQube'
+			UDF_ExecuteSonarQubeRules()
+				
+		def DomainNameUserInput = input(
+			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
+			 parameters: [
+			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
+		])
 	
 		stage 'ArtifactUploadToNexus'
 			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
@@ -159,18 +163,11 @@ node {
 			downloadDir = UDF_GetNexusArtifacts_DownloadURL(nexus_SearchURL_File)
 			}
 			
-
 			def DomainNameUserInput = input(
 			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 			 parameters: [
 			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
 			])
-			
-			/*def EnvironmentNameUserInput = input(
-			 id: 'EnvironmentNameUserInput', message: 'Enter Environment specific Profile name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Environment Name', name: 'EnvironmentName']
-			])*/
 			
 			def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 			
@@ -194,8 +191,7 @@ node {
 		stage 'Notification'
 			SendEmail("","","success")
 		
-		}catch(error)
-		{
+		}catch(error) {
 			//SendEmail()
 			throw(error)
 			SendEmail("","","Failed")
@@ -229,13 +225,12 @@ def UDF_BuildSourceCode()
 def UDF_ExecuteSonarQubeRules()
 {
 	try{
-	echo 'SonarQube Rules Execution started'
-	withSonarQubeEnv('SonarServer-Local') {
-		sh 'mvn sonar:sonar'
-	}
-	echo 'SonarQube Rules Execution Completed'
-	}catch(error)
-	{
+		echo 'SonarQube Rules Execution started'
+		withSonarQubeEnv('SonarServer-Local') {
+			sh 'mvn sonar:sonar'
+		}
+		echo 'SonarQube Rules Execution Completed'	
+	} catch(error) {
 		throw(error)
 		SendEmail("","","Failed")
 	}
@@ -250,16 +245,11 @@ def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udf
 	String nexusRepoName = "${udfp_NexusRepoName}/"
 	String targetZipName = "target/${udfp_ArtifactId}-${udfp_Version}-mule-application.jar"
 	
-	if(udfp_NexusBaseURL.contains("http://"))
-	{
+	if(udfp_NexusBaseURL.contains("http://")) {
 		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(7)
-	}
-	else if(udfp_NexusBaseURL.contains("https://"))
-	{
+	} else if(udfp_NexusBaseURL.contains("https://")) {
 		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(8)
 	}
-	
-	
 	nexusArtifactUploader(
 		nexusVersion: 'nexus3',
 		protocol: udfp_Protocol,
@@ -461,7 +451,7 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 			export ANYPOINT_PASSWORD=${password1}
 			export ANYPOINT_ORG="${AnypointOrganization}"
 			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
+			anypoint-cli runtime-mgr cloudhub-application deploy ${udfp_AppName} \"${udfp_DownloadedFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
 		"""
 			}
 		echo 'new app and no props'
