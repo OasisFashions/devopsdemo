@@ -4,7 +4,7 @@ pipeline {
 stages {
     stage('Pipeline Start') {		
 		steps {
-		   echo 'Pipeline Started with DevOps Demo'
+		   echo 'Pipeline Started with Smerret2'
 		}
     }
 }
@@ -44,6 +44,7 @@ node {
 			
 	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE') {
 		try{
+		//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 			stage 'SourceCodeBuild'	
 				UDF_BuildSourceCode()
 				
@@ -57,7 +58,7 @@ node {
 			])
 		
 			stage 'ArtifactUploadToNexus'
-				UDF_ArtifactUploadToNexus()//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+				UDF_ArtifactUploadToNexus()
 				
 			stage 'DeployToCloudHub'
 				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
@@ -69,6 +70,7 @@ node {
 			SendEmail("","","Failed")
 		}
 	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD') {
+	//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 		try{
 			stage 'SourceCodeBuild'	
 				UDF_BuildSourceCode()
@@ -77,7 +79,7 @@ node {
 				UDF_ExecuteSonarQubeRules()
 				
 			stage 'ArtifactUploadToNexus'
-				UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+				UDF_ArtifactUploadToNexus()
 			
 		} catch(error) {
 			throw(error)
@@ -182,11 +184,11 @@ def UDF_ExecuteSonarQubeRules()
 	}
 }
 
-//NEXUS ARTIFACT UPLOAD - STAGE //udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+//NEXUS ARTIFACT UPLOAD - STAGE udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
 def UDF_ArtifactUploadToNexus() 
 {
 	try{
-	echo 'Artifact Copy to Nexus Started'
+	echo "Artifact Copy to Nexus Started"
 	
 		def nexus_Protocol = "http"
 		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
