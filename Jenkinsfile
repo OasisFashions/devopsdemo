@@ -4,12 +4,13 @@ pipeline {
 stages {
     stage('Pipeline Start') {		
 		steps {
-		   echo 'Pipeline Started with Smerret2'
+		   echo 'Pipeline Started with Var Dec'
 		}
     }
 }
 }
 node {
+    def pom_ArtifactId=""
 
 	properties([
      parameters([
@@ -44,7 +45,6 @@ node {
 			
 	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE') {
 		try{
-		//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 			stage 'SourceCodeBuild'	
 				UDF_BuildSourceCode()
 				
@@ -64,7 +64,6 @@ node {
 			SendEmail("","","Failed")
 		}
 	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD') {
-	//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 		try{
 			stage 'SourceCodeBuild'	
 				UDF_BuildSourceCode()
@@ -182,13 +181,12 @@ def UDF_ExecuteSonarQubeRules()
 def UDF_ArtifactUploadToNexus() 
 {
 	try{
-	echo "Artifact Copy to Nexus Started"
-	
+		echo "Artifact Copy to Nexus Started"
 		def nexus_Protocol = "http"
 		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
 		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
 		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
+		pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
 		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
 		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
 		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
