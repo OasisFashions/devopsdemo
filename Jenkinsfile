@@ -42,94 +42,66 @@ node {
 		stage 'SonarQube'
 			UDF_ExecuteSonarQubeRules()
 			
-	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE'){
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE') {
 		try{
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
-			
-		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
+			stage 'SourceCodeBuild'	
+				UDF_BuildSourceCode()
 				
-		def DomainNameUserInput = input(
-			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
-		])
-	
-		stage 'ArtifactUploadToNexus'
-			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
-			
-		stage 'DeployToCloudHub'
-			UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
+			stage 'SonarQube'
+				UDF_ExecuteSonarQubeRules()
+					
+			def DomainNameUserInput = input(
+				 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
+				 parameters: [
+				 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
+			])
 		
-		stage 'Notification'
-			SendEmail("","","success")
+			stage 'ArtifactUploadToNexus'
+				UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+				
+			stage 'DeployToCloudHub'
+				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
 			
-		}catch(error) {
+			stage 'Notification'
+				SendEmail("","","success")			
+		} catch(error) {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD'){
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD') {
 		try{
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
+			stage 'SourceCodeBuild'	
+				UDF_BuildSourceCode()
+				
+			stage 'SonarQube'
+				UDF_ExecuteSonarQubeRules()
+				
+			stage 'ArtifactUploadToNexus'
+				UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 			
-		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
-		
-		def nexus_Protocol = "http"
-		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
-		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
-		
-		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
-		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
-		//def downloadFilePath="${env.JENKINS_HOME}/CloudHub/Downloads/"+UDF_GetGitRepoName()+"/${pom_ArtifactId}.zip"
-		//def downloadFilePath="${env.WORKSPACE}/target/${pom_ArtifactId}-${pom_Version}.zip"
-	
-		stage 'ArtifactUploadToNexus'
-			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
-			
-		}catch(error)
-		{
+		} catch(error) {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	
 	}
 	if(params.BUILD_MECHANISM == 'RELEASE'){
-		try{
+	try{
 		
-		stage 'GetArtifactListFromNexus'			
-		
-			def nexus_Protocol = "http"
-			def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-			def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-			def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-			def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-			def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
-			//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
-			def downloadDir = ""
-			environment {
-			NEXUS_CREDENTIALS = credentials('bcbacb84-8abf-482f-be12-4bc25148b805')
-			}
-			withCredentials([usernamePassword(
-			credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
-			passwordVariable: 'nexuspassword',
-			usernameVariable: 'nexususername')])
-			{
-			def nexus_SearchURL = "curl -v -u ${nexususername}:${nexuspassword} \"${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}\""
-			def nexusVersionInput = input(
-                id: 'nexusVersionInput', message: 'Please select Nexus Artifact Version for Deployment:?', 
-                parameters: [
-				[
-					$class: 'ChoiceParameterDefinition', choices: UDF_GetNexusArtifactsList(nexus_SearchURL), 
-					name: 'SELECTED_NEXUS_VERSION',
-					description: 'A select box option'
-				]])
+		stage 'GetArtifactListFromNexus'					
+		def downloadDir = ""
+
+		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')])  {
+		def nexus_SearchURL = "curl -v -u ${nexususername}:${nexuspassword} \"${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}\""
+
+		def nexusVersionInput = input(
+            		id: 'nexusVersionInput', message: 'Please select Nexus Artifact Version for Deployment:?', 
+            		parameters: [
+					[
+						$class: 'ChoiceParameterDefinition', choices: UDF_GetNexusArtifactsList(nexus_SearchURL), 
+						name: 'SELECTED_NEXUS_VERSION',
+						description: 'A select box option'
+		]])
+
 			String selectedVersion = "${nexusVersionInput}"
 			selectedVersion = selectedVersion.split(":")[1]	
 			
@@ -180,7 +152,8 @@ def UDF_BuildSourceCode()
 		if (params.BuildParameters == '')
 		{
 	echo 'Build is Starting'
-	sh 'mvn -U install -DskipTests=true'
+	//sh 'mvn -U install -DskipTests=true'
+	sh 'mvn -version'
 	echo 'Build Completed'	
 		}else
 		{
@@ -188,8 +161,7 @@ def UDF_BuildSourceCode()
 		sh '${BuildParameters}'
 		echo 'Build Completed'	
 		}
-	}catch(error)
-	{
+	}catch(error) {
 		throw(error)
 		SendEmail("","","Failed")
 	}
@@ -201,7 +173,7 @@ def UDF_ExecuteSonarQubeRules()
 	try{
 		echo 'SonarQube Rules Execution started'
 		withSonarQubeEnv('SonarServer-Local') {
-			sh 'mvn sonar:sonar'
+			//sh 'mvn sonar:sonar'
 		}
 		echo 'SonarQube Rules Execution Completed'	
 	} catch(error) {
