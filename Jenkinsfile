@@ -10,6 +10,7 @@ stages {
 }
 }
 node {
+
 	properties([
      parameters([
        choiceParam(
@@ -22,6 +23,11 @@ node {
             description: 'Please select the Build Mechanism',
             name: 'BUILD_MECHANISM'
        ),
+       choiceParam(
+         choices: 'YES\nNO',
+            description: 'Is application existed on cloud?/Are you re-deploying application on Cloud?',
+            name: 'APP_EXISTS'
+       ),
 	   string(
 	   name: 'BuildParameters', 
 	   defaultValue: 'mvn -U install -DskipTests=true', 
@@ -29,129 +35,69 @@ node {
      ])
    ])	
    
-	if(params.BUILD_MECHANISM == 'BUILD'){
+	if(params.BUILD_MECHANISM == 'BUILD') {
 		stage 'SourceCodeBuild'	
 			UDF_BuildSourceCode()
 			
 		stage 'SonarQube'
 			UDF_ExecuteSonarQubeRules()
-	}	
-	else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE'){
-		try{
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
 			
-		//stage 'SonarQube'
-			//UDF_ExecuteSonarQubeRules()
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE') {
+		try{
+		//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+			stage 'SourceCodeBuild'	
+				UDF_BuildSourceCode()
 				
-		def DomainNameUserInput = input(
-			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
-			])
+			stage 'SonarQube'
+				UDF_ExecuteSonarQubeRules()
 		
-		def nexus_Protocol = "http"
-		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
-		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
-		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
-		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
-		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
-		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
-		
-		echo "###### NEXUS REPO DETAILS ######"
-		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
-		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
-		echo "pom_GroupID: ${pom_GroupID}"
-		echo "pom_ArtifactId is : ${pom_ArtifactId}"
-		echo "pom_Version is : ${pom_Version}"
-		echo "pom_Packaging is : ${pom_Packaging}"
-		echo "propertiesFilePath is : ${propertiesFilePath}"
-		echo "downloadDir is : ${downloadDir}"
-		echo "downloadFilePath is : ${downloadFilePath}"
-		echo "DomainName which you have entered is: ${DomainNameUserInput}"
-		
-	
-		stage 'ArtifactUploadToNexus'
-			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+			stage 'ArtifactUploadToNexus'
+				UDF_ArtifactUploadToNexus()
+				
+			stage 'DeployToCloudHub'
+				UDF_DeployToCloudHub()
 			
-		stage 'DeployToCloudHub'
-			UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
-		
-		stage ' '
-			SendEmail("","","success")
-			
-		}catch(error)
-		{
+			stage 'Notification'
+				SendEmail("","","success")			
+		} catch(error) {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	
-	}
-	else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD'){
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD') {
+	//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 		try{
-		stage 'SourceCodeBuild'	
-			UDF_BuildSourceCode()
+			stage 'SourceCodeBuild'	
+				UDF_BuildSourceCode()
+				
+			stage 'SonarQube'
+				UDF_ExecuteSonarQubeRules()
+				
+			stage 'ArtifactUploadToNexus'
+				UDF_ArtifactUploadToNexus()
 			
-		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
-		
-		def nexus_Protocol = "http"
-		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
-		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
-		
-		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
-		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
-		//def downloadFilePath="${env.JENKINS_HOME}/CloudHub/Downloads/"+UDF_GetGitRepoName()+"/${pom_ArtifactId}.zip"
-		//def downloadFilePath="${env.WORKSPACE}/target/${pom_ArtifactId}-${pom_Version}.zip"
-	
-		stage 'ArtifactUploadToNexus'
-			UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
-			
-		}catch(error)
-		{
+		} catch(error) {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	
 	}
-	if(params.BUILD_MECHANISM == 'RELEASE'){
-		try{
+	if(params.BUILD_MECHANISM == 'RELEASE') {
+	try{
 		
-		stage 'GetArtifactListFromNexus'			
-		
-			def nexus_Protocol = "http"
-			def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-			def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-			def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-			def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-			def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")		
-			//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"
-			def downloadDir = ""
-			environment {
-			NEXUS_CREDENTIALS = credentials('bcbacb84-8abf-482f-be12-4bc25148b805')
-			}
-			withCredentials([usernamePassword(
-			credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
-			passwordVariable: 'nexuspassword',
-			usernameVariable: 'nexususername')])
-			{
-			def nexus_SearchURL = "curl -v -u ${nexususername}:${nexuspassword} \"${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}\""
-			def nexusVersionInput = input(
-                id: 'nexusVersionInput', message: 'Please select Nexus Artifact Version for Deployment:?', 
-                parameters: [
-				[
-					$class: 'ChoiceParameterDefinition', choices: UDF_GetNexusArtifactsList(nexus_SearchURL), 
-					name: 'SELECTED_NEXUS_VERSION',
-					description: 'A select box option'
-				]])
+		stage 'GetArtifactListFromNexus'					
+		def downloadDir = ""
+
+		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')])  {
+		def nexus_SearchURL = "curl -v -u ${nexususername}:${nexuspassword} \"${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}\""
+
+		def nexusVersionInput = input(
+            		id: 'nexusVersionInput', message: 'Please select Nexus Artifact Version for Deployment:?', 
+            		parameters: [
+					[
+						$class: 'ChoiceParameterDefinition', choices: UDF_GetNexusArtifactsList(nexus_SearchURL), 
+						name: 'SELECTED_NEXUS_VERSION',
+						description: 'A select box option'
+		]])
+
 			String selectedVersion = "${nexusVersionInput}"
 			selectedVersion = selectedVersion.split(":")[1]	
 			
@@ -159,18 +105,11 @@ node {
 			downloadDir = UDF_GetNexusArtifacts_DownloadURL(nexus_SearchURL_File)
 			}
 			
-
 			def DomainNameUserInput = input(
 			 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 			 parameters: [
 			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
 			])
-			
-			/*def EnvironmentNameUserInput = input(
-			 id: 'EnvironmentNameUserInput', message: 'Enter Environment specific Profile name for CloudHub Deployment:?', 
-			 parameters: [
-			 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Environment Name', name: 'EnvironmentName']
-			])*/
 			
 			def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 			
@@ -194,8 +133,7 @@ node {
 		stage 'Notification'
 			SendEmail("","","success")
 		
-		}catch(error)
-		{
+		}catch(error) {
 			//SendEmail()
 			throw(error)
 			SendEmail("","","Failed")
@@ -210,7 +148,8 @@ def UDF_BuildSourceCode()
 		if (params.BuildParameters == '')
 		{
 	echo 'Build is Starting'
-	sh 'mvn -U install -DskipTests=true'
+	//sh 'mvn -U install -DskipTests=true'
+	sh 'mvn -version'
 	echo 'Build Completed'	
 		}else
 		{
@@ -218,8 +157,7 @@ def UDF_BuildSourceCode()
 		sh '${BuildParameters}'
 		echo 'Build Completed'	
 		}
-	}catch(error)
-	{
+	}catch(error) {
 		throw(error)
 		SendEmail("","","Failed")
 	}
@@ -229,56 +167,72 @@ def UDF_BuildSourceCode()
 def UDF_ExecuteSonarQubeRules()
 {
 	try{
-	echo 'SonarQube Rules Execution started'
-	withSonarQubeEnv('SonarServer-Local') {
-		sh 'mvn sonar:sonar'
-	}
-	echo 'SonarQube Rules Execution Completed'
-	}catch(error)
-	{
+		echo 'SonarQube Rules Execution started'
+		withSonarQubeEnv('SonarServer-Local') {
+			//sh 'mvn sonar:sonar'
+		}
+		echo 'SonarQube Rules Execution Completed'	
+	} catch(error) {
 		throw(error)
 		SendEmail("","","Failed")
 	}
 }
 
-//NEXUS ARTIFACT UPLOAD - STAGE
-def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+//NEXUS ARTIFACT UPLOAD - STAGE udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+def UDF_ArtifactUploadToNexus() 
 {
 	try{
-	echo 'Artifact Copy to Nexus Started'
+	echo "Artifact Copy to Nexus Started"
 	
-	String nexusRepoName = "${udfp_NexusRepoName}/"
-	String targetZipName = "target/${udfp_ArtifactId}-${udfp_Version}-mule-application.jar"
+		def nexus_Protocol = "http"
+		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
+		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
+		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
+		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
+		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
+		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
+		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
+		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
+		
+		echo "###### NEXUS REPO DETAILS ######"
+		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
+		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
+		echo "pom_GroupID: ${pom_GroupID}"
+		echo "pom_ArtifactId is : ${pom_ArtifactId}"
+		echo "pom_Version is : ${pom_Version}"
+		echo "pom_Packaging is : ${pom_Packaging}"
+		echo "downloadDir is : ${downloadDir}"
 	
-	if(udfp_NexusBaseURL.contains("http://"))
-	{
-		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(7)
+	String nexusRepoName = "${nexus_RepoName}/"
+	String targetZipName = "target/${pom_ArtifactId}-${pom_Version}-mule-application.jar"
+
+	echo "nexusRepoName is : ${nexusRepoName}"
+	echo "targetZipName is : ${targetZipName}"
+	
+	if(nexus_BaseURL.contains("http://")) {
+		nexus_BaseURL = nexus_BaseURL.substring(7)
+	} else if(nexus_BaseURL.contains("https://")) {
+		nexus_BaseURL = nexus_BaseURL.substring(8)
 	}
-	else if(udfp_NexusBaseURL.contains("https://"))
-	{
-		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(8)
-	}
-	
-	
+	echo "nexus_BaseURL after substring is : ${nexus_BaseURL}"
+
 	nexusArtifactUploader(
 		nexusVersion: 'nexus3',
-		protocol: udfp_Protocol,
-		nexusUrl: udfp_NexusBaseURL,
-		groupId: udfp_GroupId,
-		version: udfp_Version,
+		protocol: nexus_Protocol,
+		nexusUrl: nexus_BaseURL,
+		groupId: pom_GroupID,
+		version: pom_Version,
 		repository: nexusRepoName,
 		credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
 		artifacts: [
-			[artifactId: udfp_ArtifactId,
+			[artifactId: pom_ArtifactId,
 			 classifier: '',
 			 file: targetZipName,
 			 type: 'jar']
 		]
 	 )
-	 
     echo 'Artifact Copy to Nexus Completed'
-	}catch(error)
-	{
+	}catch(error) {
 		throw(error)
 		SendEmail("","","Failed")
 	}
@@ -288,15 +242,24 @@ def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udf
 DEPLOY STAGE
 This function provides functionality to deploy the application package(zip file) to CloudHub Runtime
 */
-def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_NexusPackageURL, udfp_AppName)
+def UDF_DeployToCloudHub()
 {
-    /*
-	Download the selected Application Zip package from Nexus Repository
-	*/
-	 
+
 	echo "###### Entered to Application Deployment stage ######"
-	echo "#### Parameters we received ##udfp_DownloadedFilePath: ${udfp_DownloadedFilePath} ##udfp_PropertiesFilePath: ${udfp_PropertiesFilePath} ##udfp_NexusPackageURL: ${udfp_NexusPackageURL} ##udfp_AppName: ${udfp_AppName}"
-	
+
+	def DomainNameUserInput = input(
+		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
+		 parameters: [
+		 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
+	])
+
+	def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+	def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
+	echo "propertiesFilePath is : ${propertiesFilePath}"
+	echo "downloadFilePath is : ${downloadFilePath}"	
+	echo "DomainName which you have entered is: ${DomainNameUserInput}"
+	echo "APP_EXISTS is : ${APP_EXISTS}"
+
 	def AnypointCredentialID = input(
 			 id: 'DomainNameUserInput', message: 'Please provide Cloudhub Credential ID:?', 
 			 parameters: [
