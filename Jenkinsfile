@@ -57,7 +57,7 @@ node {
 			])
 		
 			stage 'ArtifactUploadToNexus'
-				UDF_ArtifactUploadToNexus(nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
+				UDF_ArtifactUploadToNexus()//nexus_BaseURL,pom_GroupID,pom_Version,nexus_RepoName,pom_ArtifactId,nexus_Protocol)
 				
 			stage 'DeployToCloudHub'
 				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
@@ -182,13 +182,13 @@ def UDF_ExecuteSonarQubeRules()
 	}
 }
 
-//NEXUS ARTIFACT UPLOAD - STAGE
-def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+//NEXUS ARTIFACT UPLOAD - STAGE //udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+def UDF_ArtifactUploadToNexus() 
 {
 	try{
 	echo 'Artifact Copy to Nexus Started'
 	
-			def nexus_Protocol = "http"
+		def nexus_Protocol = "http"
 		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
 		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
 		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
@@ -212,24 +212,24 @@ def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udf
 		echo "downloadFilePath is : ${downloadFilePath}"
 		echo "DomainName which you have entered is: ${DomainNameUserInput}"
 	
-	String nexusRepoName = "${udfp_NexusRepoName}/"
-	String targetZipName = "target/${udfp_ArtifactId}-${udfp_Version}-mule-application.jar"
+	String nexusRepoName = "${nexus_RepoName}/"
+	String targetZipName = "target/${udfp_ArtifactId}-${pom_Version}-mule-application.jar"
 	
-	if(udfp_NexusBaseURL.contains("http://")) {
-		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(7)
-	} else if(udfp_NexusBaseURL.contains("https://")) {
-		udfp_NexusBaseURL = udfp_NexusBaseURL.substring(8)
+	if(nexus_BaseURL.contains("http://")) {
+		nexus_BaseURL = nexus_BaseURL.substring(7)
+	} else if(nexus_BaseURL.contains("https://")) {
+		nexus_BaseURL = nexus_BaseURL.substring(8)
 	}
 	nexusArtifactUploader(
 		nexusVersion: 'nexus3',
-		protocol: udfp_Protocol,
-		nexusUrl: udfp_NexusBaseURL,
-		groupId: udfp_GroupId,
-		version: udfp_Version,
+		protocol: nexus_Protocol,
+		nexusUrl: nexus_BaseURL,
+		groupId: pom_GroupID,
+		version: pom_Version,
 		repository: nexusRepoName,
 		credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
 		artifacts: [
-			[artifactId: udfp_ArtifactId,
+			[artifactId: pom_ArtifactId,
 			 classifier: '',
 			 file: targetZipName,
 			 type: 'jar']
