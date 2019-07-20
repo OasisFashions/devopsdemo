@@ -10,29 +10,6 @@ stages {
 }
 }
 node {
-		def nexus_Protocol = "http"
-		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
-		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
-		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
-		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
-		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
-		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
-		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
-		
-				echo "###### NEXUS REPO DETAILS ######"
-		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
-		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
-		echo "pom_GroupID: ${pom_GroupID}"
-		echo "pom_ArtifactId is : ${pom_ArtifactId}"
-		echo "pom_Version is : ${pom_Version}"
-		echo "pom_Packaging is : ${pom_Packaging}"
-		echo "propertiesFilePath is : ${propertiesFilePath}"
-		echo "downloadDir is : ${downloadDir}"
-		echo "downloadFilePath is : ${downloadFilePath}"
-		echo "DomainName which you have entered is: ${DomainNameUserInput}"
 
 	properties([
      parameters([
@@ -85,17 +62,14 @@ node {
 		stage 'DeployToCloudHub'
 			UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
 		
-		stage ' '
+		stage 'Notification'
 			SendEmail("","","success")
 			
-		}catch(error)
-		{
+		}catch(error) {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	
-	}
-	else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD'){
+	} else if(params.BUILD_MECHANISM == 'BUILD-AND-ARTEFACT-UPLOAD'){
 		try{
 		stage 'SourceCodeBuild'	
 			UDF_BuildSourceCode()
@@ -241,6 +215,30 @@ def UDF_ArtifactUploadToNexus(udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udf
 {
 	try{
 	echo 'Artifact Copy to Nexus Started'
+	
+			def nexus_Protocol = "http"
+		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
+		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
+		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
+		def pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
+		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
+		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
+		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
+		def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
+		def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
+		
+		echo "###### NEXUS REPO DETAILS ######"
+		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
+		echo "nexus_RepoName: ${params.ENVIRONMENTS}"
+		echo "pom_GroupID: ${pom_GroupID}"
+		echo "pom_ArtifactId is : ${pom_ArtifactId}"
+		echo "pom_Version is : ${pom_Version}"
+		echo "pom_Packaging is : ${pom_Packaging}"
+		echo "propertiesFilePath is : ${propertiesFilePath}"
+		echo "downloadDir is : ${downloadDir}"
+		echo "downloadFilePath is : ${downloadFilePath}"
+		echo "DomainName which you have entered is: ${DomainNameUserInput}"
 	
 	String nexusRepoName = "${udfp_NexusRepoName}/"
 	String targetZipName = "target/${udfp_ArtifactId}-${udfp_Version}-mule-application.jar"
