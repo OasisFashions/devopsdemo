@@ -4,7 +4,7 @@ pipeline {
 stages {
     stage('Pipeline Start') {		
 		steps {
-		   echo 'Pipeline Started with Smerret2'
+		   echo 'Pipeline Started with DevOps'
 		}
     }
 }
@@ -50,18 +50,12 @@ node {
 				
 			stage 'SonarQube'
 				UDF_ExecuteSonarQubeRules()
-					
-			def DomainNameUserInput = input(
-				 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
-				 parameters: [
-				 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
-			])
 		
 			stage 'ArtifactUploadToNexus'
 				UDF_ArtifactUploadToNexus()
 				
 			stage 'DeployToCloudHub'
-				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"",DomainNameUserInput)
+				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,"")
 			
 			stage 'Notification'
 				SendEmail("","","success")			
@@ -212,10 +206,9 @@ def UDF_ArtifactUploadToNexus()
 		echo "propertiesFilePath is : ${propertiesFilePath}"
 		echo "downloadDir is : ${downloadDir}"
 		echo "downloadFilePath is : ${downloadFilePath}"
-		echo "DomainName which you have entered is: ${DomainNameUserInput}"
 	
 	String nexusRepoName = "${nexus_RepoName}/"
-	String targetZipName = "target/${udfp_ArtifactId}-${pom_Version}-mule-application.jar"
+	String targetZipName = "target/${pom_ArtifactId}-${pom_Version}-mule-application.jar"
 	
 	if(nexus_BaseURL.contains("http://")) {
 		nexus_BaseURL = nexus_BaseURL.substring(7)
@@ -250,7 +243,7 @@ def UDF_ArtifactUploadToNexus()
 DEPLOY STAGE
 This function provides functionality to deploy the application package(zip file) to CloudHub Runtime
 */
-def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_NexusPackageURL, udfp_AppName)
+def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_NexusPackageURL)
 {
     /*
 	Download the selected Application Zip package from Nexus Repository
@@ -259,6 +252,14 @@ def UDF_DeployToCloudHub(udfp_DownloadedFilePath, udfp_PropertiesFilePath, udfp_
 	echo "###### Entered to Application Deployment stage ######"
 	echo "#### Parameters we received ##udfp_DownloadedFilePath: ${udfp_DownloadedFilePath} ##udfp_PropertiesFilePath: ${udfp_PropertiesFilePath} ##udfp_NexusPackageURL: ${udfp_NexusPackageURL} ##udfp_AppName: ${udfp_AppName}"
 	
+	def DomainNameUserInput = input(
+		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
+		 parameters: [
+		 [$class: 'TextParameterDefinition', defaultValue: '', description: 'CloudHub Domain Name', name: 'DomainName']
+	])
+	
+	echo "DomainName which you have entered is: ${DomainNameUserInput}"
+
 	def AnypointCredentialID = input(
 			 id: 'DomainNameUserInput', message: 'Please provide Cloudhub Credential ID:?', 
 			 parameters: [
