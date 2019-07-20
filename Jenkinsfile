@@ -193,15 +193,15 @@ def UDF_ArtifactUploadToNexus()
 {	
 	try{
 		echo "Artifact Copy to Nexus Started"
-		def nexus_Protocol = "http"
-		def nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
-		def nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
-		def pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
+		nexus_Protocol = "http"
+		nexus_BaseURL = "${env.LOCAL_NEXUS_BASEURL}"		
+		nexus_RepoName = UDF_Get_Nexus_RepoName("${params.ENVIRONMENTS}")		
+		pom_GroupID = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","groupId")
 		pom_ArtifactId = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","artifactId")
-		def pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
-		def pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
+		pom_Version = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","version")
+		pom_Packaging = UDF_GetPOMData("${env.WORKSPACE}/pom.xml","packaging")
 		//def nexus_SearchURL = "${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}"	
-		def downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
+		downloadDir = "${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()	
 		
 		echo "###### NEXUS REPO DETAILS ######"
 		echo "Nexus base URL: ${env.LOCAL_NEXUS_BASEURL}"	
