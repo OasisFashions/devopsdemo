@@ -1,16 +1,23 @@
 pipeline {
   agent any
   
-stages {
-    stage('Pipeline Start') {		
-		steps {
-		   echo 'Pipeline Started with Var Dec'
-		}
-    }
-}
+	stages {
+	    stage('Pipeline Start') {		
+			steps {
+			   echo 'Pipeline Started with Vars Declared'
+			}
+	    }
+	}
 }
 node {
-    def pom_ArtifactId=""
+	def nexus_Protocol = ""
+	def nexus_BaseURL = ""		
+	def nexus_RepoName = ""		
+	def pom_GroupID = ""
+	pom_ArtifactId = ""
+	def pom_Version = ""
+	def pom_Packaging = ""
+	def downloadDir = ""
 
 	properties([
      parameters([
@@ -34,15 +41,14 @@ node {
 	   defaultValue: 'mvn -U install -DskipTests=true', 
 	   description: 'Please provide Additional Build Parameter to execute')
      ])
-   ])	
-   
+    ])
+
 	if(params.BUILD_MECHANISM == 'BUILD') {
 		stage 'SourceCodeBuild'	
 			UDF_BuildSourceCode()
 			
 		stage 'SonarQube'
-			UDF_ExecuteSonarQubeRules()
-			
+			UDF_ExecuteSonarQubeRules()			
 	} else if(params.BUILD_MECHANISM == 'BUILD-AND-RELEASE') {
 		try{
 			stage 'SourceCodeBuild'	
@@ -78,9 +84,8 @@ node {
 			throw(error)
 			SendEmail("","","Failed")
 		}
-	}
-	if(params.BUILD_MECHANISM == 'RELEASE') {
-	try{
+	} else if(params.BUILD_MECHANISM == 'RELEASE') {
+		try{
 		
 		stage 'GetArtifactListFromNexus'					
 		def downloadDir = ""
@@ -142,7 +147,7 @@ node {
 
 //BUILD STAGE
 def UDF_BuildSourceCode()
-{
+{	
 	try	{
 		if (params.BuildParameters == '')
 		{
@@ -162,9 +167,12 @@ def UDF_BuildSourceCode()
 	}
 }
 
-//SONARQUBE - STAGE
+/*
+SONARQUBE - STAGE
+This function provides functionality to do the SONAR Analysis
+*/
 def UDF_ExecuteSonarQubeRules()
-{
+{	
 	try{
 		echo 'SonarQube Rules Execution started'
 		withSonarQubeEnv('SonarServer-Local') {
@@ -177,9 +185,13 @@ def UDF_ExecuteSonarQubeRules()
 	}
 }
 
-//NEXUS ARTIFACT UPLOAD - STAGE udfp_NexusBaseURL, udfp_GroupId, udfp_Version, udfp_NexusRepoName, udfp_ArtifactId, udfp_Protocol)
+/*
+NEXUS ARTIFACT UPLOAD - STAGE
+This function provides functionality to upload the artifacts to the Nexus repository
+*/
+
 def UDF_ArtifactUploadToNexus() 
-{
+{	
 	try{
 		echo "Artifact Copy to Nexus Started"
 		def nexus_Protocol = "http"
@@ -240,8 +252,9 @@ def UDF_ArtifactUploadToNexus()
 DEPLOY STAGE
 This function provides functionality to deploy the application package(zip file) to CloudHub Runtime
 */
+
 def UDF_DeployToCloudHub()
-{
+{	
 
 	echo "###### Entered to Application Deployment stage ######"
 
@@ -253,6 +266,7 @@ def UDF_DeployToCloudHub()
 
 	def propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 	def downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"
+	
 	echo "propertiesFilePath is : ${propertiesFilePath}"
 	echo "downloadFilePath is : ${downloadFilePath}"	
 	echo "DomainName which you have entered is: ${DomainNameUserInput}"
@@ -589,7 +603,7 @@ def UDF_DeployToCloudHub()
 }
 
 def UDF_GetGitRepoName()
-{
+{	
 	try{
 	def tokens = "${env.JOB_NAME}".tokenize('/')
     String repo = tokens[tokens.size()-2]
@@ -630,7 +644,7 @@ def UDF_Get_Nexus_RepoName(udfp_Environment)
 }
 
 def UDF_GetPOMData(udfp_PomName, udfp_PropertyName)
-{
+{	
 	try{
 	def resultVal = ""
 	def pomFile = readFile(udfp_PomName)
@@ -648,8 +662,9 @@ def UDF_GetPOMData(udfp_PomName, udfp_PropertyName)
 /*
 This function returns the list of Packages from given Nexus Repository
 */
+
 def UDF_GetNexusArtifactsList(udfp_NexusPackageSearchURL)
-{
+{	
 	try{
 	String responseString = ""
 	//String nexusResponseJson = udfp_NexusPackageSearchURL.toURL().text
@@ -674,7 +689,7 @@ def UDF_GetNexusArtifactsList(udfp_NexusPackageSearchURL)
 }
 
 def UDF_GetNexusArtifacts_DownloadURL(udfp_NexusPackageSearchURL)
-{
+{	
 	try{
 	String responseString = ""
 	//String nexusResponseJson = udfp_NexusPackageSearchURL.toURL().text
@@ -702,7 +717,7 @@ def UDF_GetNexusArtifacts_DownloadURL(udfp_NexusPackageSearchURL)
 This function Sends Email
 */
 def SendEmail(udfp_ToAddress, udfp_FromAddress, udfp_Status)
-{
+{	
 	try{
 	   String body = ""
 	   
@@ -730,10 +745,10 @@ def SendEmail(udfp_ToAddress, udfp_FromAddress, udfp_Status)
 /*
 This function converts the given json string to HashMap and returns it back
 */
+
 import groovy.json.JsonSlurperClassic
 @NonCPS
-def parseJsonToMap(String json) 
-{
+def parseJsonToMap(String json) {
     final slurper = new JsonSlurperClassic()
     return new HashMap<>(slurper.parseText(json))
 }
