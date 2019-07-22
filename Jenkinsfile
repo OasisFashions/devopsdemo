@@ -238,6 +238,13 @@ def UDF_DeployToCloudHub()
 
 	echo "###### Entered to Application Deployment stage #####"
 
+	def DomainNameUserInput="devopsdemo"
+	def AnypointCredentialID="591b4f61-8b22-4df4-85ee-c2b6a51e7acb"
+	def PropertiesFileInput="NO"
+	def AnypointOrganization="LnD"
+	def AnypointEnvironment="PROD"
+	
+	/*
 	def DomainNameUserInput = input(
 		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
 		 parameters: [
@@ -276,7 +283,7 @@ def UDF_DeployToCloudHub()
 		
 	environment {
 		ANYPOINT_CREDENTIALS = credentials("${AnypointCredentialID}")
-	}
+	} */
 		
 	propertiesFilePath = ""
 	downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"	
@@ -291,7 +298,7 @@ def UDF_DeployToCloudHub()
 		}
 	}
 
-	def workerSizeInput = input(
+	/*def workerSizeInput = input(
             id: 'workerSizeInput', message: 'Please select vCores for Deployment:?', 
             parameters: [
 			[
@@ -314,11 +321,16 @@ def UDF_DeployToCloudHub()
 				$class: 'ChoiceParameterDefinition', choices: '4.1.3\n4.1.4\n4.1.5', 
 				name: 'SELECTED_MULE_RUNTIME',
 				description: 'Please select Mule Runtime'
-			]])
+			]])  
 
 		vCoreInput = "${workerSizeInput}"
 		workerInput = "${workerNumberInput}"
-		runTimeVersion = "${RuntimeInput}"
+		runTimeVersion = "${RuntimeInput}"  */
+
+		vCoreInput = "0.1"
+		workerInput = "1"
+		runTimeVersion = "4.1.5"  
+
 
 		echo "vCoreInput is : ${vCoreInput}"
 		echo "workerInput is : ${workerInput}"
