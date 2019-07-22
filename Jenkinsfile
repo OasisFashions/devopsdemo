@@ -233,8 +233,7 @@ DEPLOY STAGE
 This function provides functionality to deploy the application package(zip file) to CloudHub Runtime
 */
 
-def UDF_DeployToCloudHub()
-{	
+def UDF_DeployToCloudHub() {	
 
 	echo "###### Entered to Application Deployment stage #####"
 
@@ -243,7 +242,7 @@ def UDF_DeployToCloudHub()
 	def PropertiesFileInput="NO"
 	def AnypointOrganization="LnD"
 	def AnypointEnvironment="PROD"
-	
+
 	/*
 	def DomainNameUserInput = input(
 		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
@@ -331,7 +330,6 @@ def UDF_DeployToCloudHub()
 		workerInput = "1"
 		runTimeVersion = "4.1.5"  
 
-
 		echo "vCoreInput is : ${vCoreInput}"
 		echo "workerInput is : ${workerInput}"
 		echo "runTimeVersion is : ${runTimeVersion}"
@@ -344,46 +342,8 @@ def UDF_DeployToCloudHub()
 		echo "AnypointEnvironment is :${AnypointEnvironment}"
 		echo "APP_EXISTS is : ${APP_EXISTS}"
 
-
-	if(APP_EXISTS == 'YES' && PropertiesFileInput == 'YES') {	
-
-		echo "App Exists is false and Property file input is YES"
-		echo "###### Deploy New Application ######"
-
-		withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]){
-			sh """			
-			export ANYPOINT_USERNAME=${username1}
-			export ANYPOINT_PASSWORD=${password1}
-			export ANYPOINT_ORG="${AnypointOrganization}"
-			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application deploy ${DomainNameUserInput} \"${downloadFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} --propertiesFile ${propertiesFilePath}
-		"""
-		}
-		echo "###### New Application Deployment is done ######"
-	} else if(APP_EXISTS == 'NO' && PropertiesFileInput == 'NO') {	
+	if (APP_EXISTS == 'YES') {	
 		
-		withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')])
-			{
-			sh """			
-			export ANYPOINT_USERNAME=${username1}
-			export ANYPOINT_PASSWORD=${password1}
-			export ANYPOINT_ORG="${AnypointOrganization}"
-			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application deploy ${DomainNameUserInput} \"${downloadFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
-		"""
-			}
-		echo '#### New application deployed ####'
-	} else if (APP_EXISTS == 'YES' && PropertiesFileInput == 'YES') {	
-	
-		def MuleRunTImeProperties = input(
-                id: 'MuleRunTImeProperties', message: 'APP_EXISTS == Yes && PropertiesFileInput ==  NO:Do you want to change Mule Runtime like vCore,Workers, MuleRuntimeVersion:?', 
-                parameters: [
-				[
-					$class: 'ChoiceParameterDefinition', choices: 'YES\nNO', 
-					name: 'MULE_RUNTIME_PROPERTIES',
-					description: 'APP_EXISTS == true && PropertiesFileInput ==  NO:Please confirm YES or NO'
-				]])
-		if (MuleRunTImeProperties == 'YES') {		
 			withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]) {
 				sh """			
 				export ANYPOINT_USERNAME=${username1}
@@ -394,54 +354,18 @@ def UDF_DeployToCloudHub()
 				mvn deploy -DmuleDeploy -Dmule.env=dev -Dencrypt.key=MULESOFT_DEV -Danypoint.platform.gatekeeper=disabled
 			"""
 			}
-		}else{
-			echo "AnypointCredentialID: ${AnypointCredentialID}"
-			
-			withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]) {
+	} else {
+		withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')])
+			{
 			sh """			
 			export ANYPOINT_USERNAME=${username1}
 			export ANYPOINT_PASSWORD=${password1}
 			export ANYPOINT_ORG="${AnypointOrganization}"
 			export ANYPOINT_ENV="${AnypointEnvironment}"
-			anypoint-cli runtime-mgr cloudhub-application modify ${DomainNameUserInput} \"${downloadFilePath}\"  --propertiesFile ${propertiesFilePath}
+			anypoint-cli runtime-mgr cloudhub-application deploy ${DomainNameUserInput} \"${downloadFilePath}\" --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion}
 		"""
-			}
 		}
-	} else if (APP_EXISTS == 'YES' && PropertiesFileInput == 'NO') {	
-	
-		def MuleRunTImeProperties = input(
-                id: 'MuleRunTImeProperties', message: 'Do you want to change Mule Runtime like vCore,Workers, MuleRuntimeVersion:?', 
-                parameters: [
-				[
-					$class: 'ChoiceParameterDefinition', choices: 'YES\nNO', 
-					name: 'MULE_RUNTIME_PROPERTIES',
-					description: 'Please confirm YES or NO'
-				]])
-				
-		if (MuleRunTImeProperties == 'YES')
-		{
-			echo '${AnypointOrganization}'
-			withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]){
-				sh """			
-					export ANYPOINT_USERNAME=${username1}
-					export ANYPOINT_PASSWORD=${password1}
-					export ANYPOINT_ORG="${AnypointOrganization}"
-					export ANYPOINT_ENV="${AnypointEnvironment}"
-					anypoint-cli runtime-mgr cloudhub-application modify ${DomainNameUserInput} \"${downloadFilePath}\"  --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} 
-				"""
-			}
-		echo 'existing app and props'
-		} else{
-				withCredentials([usernamePassword(credentialsId: "${AnypointCredentialID}",passwordVariable: 'password1',usernameVariable: 'username1')]) {
-					sh """			
-					export ANYPOINT_USERNAME=${username1}
-					export ANYPOINT_PASSWORD=${password1}
-					export ANYPOINT_ORG="${AnypointOrganization}"
-					export ANYPOINT_ENV="${AnypointEnvironment}"
-					anypoint-cli runtime-mgr cloudhub-application modify ${DomainNameUserInput} \"${downloadFilePath}\"
-				"""
-			}
-		}
+
 	}
 }
 
