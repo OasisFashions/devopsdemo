@@ -236,7 +236,7 @@ This function provides functionality to deploy the application package(zip file)
 def UDF_DeployToCloudHub()
 {	
 
-	echo "###### Entered to Application Deployment stage ######"
+	echo "###### Entered to Application Deployment stage ######	and propertiesFilePath is : ${propertiesFilePath}"
 
 	def DomainNameUserInput = input(
 		 id: 'DomainNameUserInput', message: 'Enter app/domain name for CloudHub Deployment:?', 
