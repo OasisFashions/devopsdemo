@@ -278,8 +278,10 @@ def UDF_DeployToCloudHub()
 		ANYPOINT_CREDENTIALS = credentials("${AnypointCredentialID}")
 	}
 		
-	echo "propertiesFilePath is : ${propertiesFilePath}"
-	if(${propertiesFilePath} != "")
+	propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+	downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"	
+
+	if(propertiesFilePath != "")
 	{
 		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')]) {			
 			sh "wget --user ${nexususername} --password ${nexuspassword} ${propertiesFilePath} -O \"${downloadFilePath}\""	
@@ -311,8 +313,6 @@ def UDF_DeployToCloudHub()
 				description: 'Please select Mule Runtime'
 			]])
 
-		propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
-		downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"	
 		vCoreInput = "${workerSizeInput}"
 		workerInput = "${workerNumberInput}"
 		runTimeVersion = "${RuntimeInput}"
