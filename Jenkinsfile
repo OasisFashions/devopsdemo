@@ -116,9 +116,9 @@ node {
 			
 			propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 			downloadFilePath="C:\\Program Files\\Jenkins\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
-			
+
 		stage 'DeployToCloudHub'
-				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,downloadDir,DomainNameUserInput)
+				UDF_DeployToCloudHub()
 			
 		stage 'Notification'
 			SendEmail("","","success")
@@ -278,7 +278,8 @@ def UDF_DeployToCloudHub()
 		ANYPOINT_CREDENTIALS = credentials("${AnypointCredentialID}")
 	}
 		
-	if(propertiesFilePath != "")
+	echo "propertiesFilePath is : ${propertiesFilePath}"
+	if(${propertiesFilePath} != "")
 	{
 		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')]) {			
 			sh "wget --user ${nexususername} --password ${nexuspassword} ${propertiesFilePath} -O \"${downloadFilePath}\""	
