@@ -280,14 +280,14 @@ def UDF_DeployToCloudHub()
 		
 	propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 	downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"	
-	
+
 	echo "propertiesFilePath is : ${propertiesFilePath}"
 	echo "downloadFilePath is : ${downloadFilePath}"	
 
 	if(propertiesFilePath != "")
 	{
 		withCredentials([usernamePassword(credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',passwordVariable: 'nexuspassword',usernameVariable: 'nexususername')]) {			
-			sh "wget --user ${nexususername} --password ${nexuspassword} ${propertiesFilePath} -O \"${downloadFilePath}\""	
+			sh "wget --user ${nexususername} --password ${nexuspassword} \"${propertiesFilePath}\" -O \"${downloadFilePath}\""	
 		}
 	}
 
