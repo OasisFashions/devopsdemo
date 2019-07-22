@@ -115,21 +115,8 @@ node {
 			])
 			
 			propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
+			downloadFilePath="C:\\Program Files\\Jenkins\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
 			
-			//def downloadDir = "${env.JENKINS_HOME}/CloudHub/Downloads/"+UDF_GetGitRepoName()		
-			
-			/*withCredentials([usernamePassword(
-			credentialsId: 'bcbacb84-8abf-482f-be12-4bc25148b805',
-			passwordVariable: 'nexuspassword',
-			usernameVariable: 'nexususername')])
-			{
-			def nexus_SearchURL_File = "curl -v -u ${nexususername}:${nexuspassword} ${nexus_BaseURL}/service/rest/beta/search?repository=${nexus_RepoName}&group=${pom_GroupID}&name=${pom_ArtifactId}&version=${selectedVersion}"
-			def downloadDir = UDF_GetNexusArtifacts_DownloadURL(nexus_SearchURL_File)
-			}*/
-			//def downloadFilePath="\${env.JENKINS_HOME}\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
-			def downloadFilePath="C:\\Program Files\\Jenkins\\CloudHub\\Downloads\\"+UDF_GetGitRepoName()+"\\${pom_ArtifactId}.jar"
-			//def downloadFilePath="${env.WORKSPACE}/target/${pom_ArtifactId}-${pom_Version}.zip"
-
 		stage 'DeployToCloudHub'
 				UDF_DeployToCloudHub(downloadFilePath, propertiesFilePath,downloadDir,DomainNameUserInput)
 			
