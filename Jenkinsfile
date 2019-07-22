@@ -280,6 +280,9 @@ def UDF_DeployToCloudHub()
 		
 	propertiesFilePath = "${env.JENKINS_HOME}\\CloudHub\\"+UDF_GetGitRepoName()+"\\${params.ENVIRONMENTS}.properties.txt"
 	downloadFilePath="${env.WORKSPACE}\\target\\${pom_ArtifactId}-${pom_Version}-${pom_Packaging}.jar"	
+	
+	echo "propertiesFilePath is : ${propertiesFilePath}"
+	echo "downloadFilePath is : ${downloadFilePath}"	
 
 	if(propertiesFilePath != "")
 	{
@@ -321,8 +324,6 @@ def UDF_DeployToCloudHub()
 		echo "workerInput is : ${workerInput}"
 		echo "runTimeVersion is : ${runTimeVersion}"
 		echo "AppName is : ${DomainNameUserInput}"
-		echo "propertiesFilePath is : ${propertiesFilePath}"
-		echo "downloadFilePath is : ${downloadFilePath}"	
 		echo "DomainName which you have entered is: ${DomainNameUserInput}"
 		echo "Nexus Download URL - ${propertiesFilePath}"
 		echo "AnypointCredentialID is :${AnypointCredentialID}"
