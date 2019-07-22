@@ -415,7 +415,7 @@ def UDF_DeployToCloudHub()
 					export ANYPOINT_PASSWORD=${password1}
 					export ANYPOINT_ORG="${AnypointOrganization}"
 					export ANYPOINT_ENV="${AnypointEnvironment}"
-					anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\"  --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} 
+					anypoint-cli runtime-mgr cloudhub-application modify ${DomainNameUserInput} \"${downloadFilePath}\"  --workerSize ${vCoreInput} --workers ${workerInput} --runtime ${runTimeVersion} 
 				"""
 			}
 		echo 'existing app and props'
@@ -426,7 +426,7 @@ def UDF_DeployToCloudHub()
 					export ANYPOINT_PASSWORD=${password1}
 					export ANYPOINT_ORG="${AnypointOrganization}"
 					export ANYPOINT_ENV="${AnypointEnvironment}"
-					anypoint-cli runtime-mgr cloudhub-application modify ${udfp_AppName} \"${udfp_DownloadedFilePath}\"
+					anypoint-cli runtime-mgr cloudhub-application modify ${DomainNameUserInput} \"${downloadFilePath}\"
 				"""
 			}
 		}
